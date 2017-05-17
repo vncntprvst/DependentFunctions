@@ -1,9 +1,8 @@
 function userinfo=UserDirInfo
-%find user, directories and slash type
-
-userinfo=struct('directory',[],'slash',[],'user',[],'dbldir',[],...
+keepCurDir=cd;
+%define info structure
+userinfo=struct('directory',[],'user',[],'dbldir',[],...
     'syncdir',[],'mapdr',[],'servrep',[],'mapddataf',[]);
-
 % find host name
 [~,compHostName]=system('hostname');
 
@@ -11,54 +10,83 @@ if regexp(compHostName(end),'\W') %the system command added a carriage return en
     compHostName=compHostName(1:end-1);
 end
 
-if strfind(computer('arch'),'win')
-    userinfo.slash = '\';
-else
-    userinfo.slash = '/';
+%the definition file provides information about user directories
+%fill up the following fields (all are optional - depends on user preferences)
+% and save file with the hostname as filename (e.g., RecordingSetupPC)
+% userinfo.directory = 'E:\Data\'; % where the data is located
+% userinfo.user='Vincent'; %user name
+% userinfo.probemap='C:\...\probemaps'; %where the probe mappings are stored
+% userinfo.WinDirs='C:\Windows\system32;C:\Windows'; % Windows directories
+% userinfo.ypipe='C:\...\yes.txt'; % a pipe-in file with just the letter y in it 
+% userinfo.circusHomeDir='C:\Users\Vincent\spyking-circus'; % spyking-circus home directory
+% userinfo.circusEnv='spykc'; % Anaconda environement for spyking-circus 
+% userinfo.MPIDir='C:\Program Files\Microsoft MPI\Bin\'; % MPI directory
+% userinfo.dbldir=''; %database directory 
+% userinfo.mapddataf=''; %mapped drive
+% userinfo.syncdir=''; %cloud directory 
+
+%open definition file
+try 
+    cd ('C:\Code') % change that folder to wherever your defition file is
+    if exist(compHostName,'file')
+        fileLoc=['C:\Code' filesep compHostName];
+    end
+catch
+    disp('trying to locate directory definition file');
+    funDir=[regexp(which('UserDirInfo'),['^.+(?=\' filesep ')'],'match','once') filesep];
+    rootDir=[regexp(funDir,['^.+?(?=\' filesep ')'],'match','once') filesep]; %root letter of current directory in Windows 
+    %                                                                    may need to change for other platforms
+    cd(funDir); cd('..');
+    if contains(computer('arch'),'win')
+        [~,list] = system(['dir ' compHostName ' /S/B']);
+        fileLoc = textscan(list, '%s', 'Delimiter', '\n');
+    else
+        [~,fileLoc]=system(['find ' funDir ' -type f -name "' compHostName '"']);
+    end
+    % if comes up empty, move one folder up
+    if contains(fileLoc{:},'File Not Found')
+        cd('..'); curDir=cd;
+        if contains(computer('arch'),'win')
+            [~,list] = system(['dir ' compHostName ' /S/B']);
+            fileLoc = textscan(list, '%s', 'Delimiter', '\n');
+        else
+            [~,fileLoc]=system(['find ' curDir ' -type f -name "' compHostName '"']);
+        end
+    end
+    if contains(fileLoc{:},'File Not Found')
+        cd(rootDir); curDir=cd;
+        if contains(computer('arch'),'win')
+            [~,list] = system(['dir ' compHostName ' /S/B']);
+            fileLoc = textscan(list, '%s', 'Delimiter', '\n');
+        else
+            [~,fileLoc]=system(['find ' curDir ' -type f -name "' compHostName '"']);
+        end
+    end
+    fileLoc=fileLoc{1, 1}{1, 1};
 end
 
-if strcmp(compHostName,'setup_souris')
-    userinfo.directory = 'E:\Data\raw';
-    userinfo.user='Vincent';
-    userinfo.probemap='C:\Code\EphysDataProc\DataExport\probemaps';
-    userinfo.dbldir='';
-    userinfo.mapddataf='';
-    userinfo.syncdir='C:\Box Sync\Home Folder vp35\Sync\Wang Lab\Data\Ephys\export';
-    userinfo.MPIDir='C:\Program Files\Microsoft MPI\Bin\';
-    userinfo.WinDirs='C:\Windows\system32;C:\Windows';
-    userinfo.ypipe='C:\Code\yes.txt';
-    userinfo.circusHomeDir='C:\Users\Vincent\spyking-circus';
-    userinfo.circusEnv='spykc';
-elseif strcmp(compHostName,'Neuro-Wang-01')
-    userinfo.directory = 'D:\Data\Vincent\ephys\raw';
-    userinfo.probemap='D:\Code\EphysDataProc\DataExport\probemaps';
-    userinfo.dbldir='';
-    userinfo.mapddataf='';
-    userinfo.MPIDir='C:\Program Files\Microsoft MPI\Bin\';
-    userinfo.WinDirs='C:\Windows\system32;C:\Windows';
-    if strcmp(getenv('username'),'Vincent')
-        userinfo.user='Vincent';
-        userinfo.syncdir='D:\Data\Vincent\Sync\Box Sync\Home Folder vp35\Sync\Wang Lab\Data\Ephys\export';
-    elseif strcmp(getenv('username'),'Michael')
-        userinfo.user='Michael';
-        userinfo.syncdir='';
+if ~isempty(fileLoc)
+    fid = fopen(fileLoc);
+    tline = fgetl(fid);
+    while ischar(tline)
+        eval(tline)
+        tline = fgetl(fid);
     end
-    userinfo.ypipe='D:\Code\yes.txt';
-elseif strcmp(compHostName,'DangerZone')
-    if strcmp(getenv('username'),'DangerZone')
-        userinfo.directory = 'E:\data\Recordings\';
-        userinfo.user='Vincent';
-        userinfo.dbldir = 'E:\JDBC';
-        userinfo.mapddataf='vincedata';
-        userinfo.syncdir='E:\BoxSync\Box Sync\Home Folder vp35\Sync\CbTimingPredict\data';
-    end
+    fclose(fid);
 end
 
 % find environment directories
+try 
 [~,envInfo] = system('conda info -e');
 userinfo.envRootDir=cell2mat(regexp(envInfo,'(?<=spykc                    ).+?(?=\n)','match'));
-userinfo.envScriptDir=[userinfo.envRootDir userinfo.slash 'Scripts'];
-userinfo.envLibDir=[userinfo.envRootDir userinfo.slash 'Library' userinfo.slash 'bin'];
+if isempty(userinfo.envRootDir)
+    userinfo.envRootDir=cell2mat(regexp(envInfo,'(?<=root                  \*  ).+?(?=\n)','match'));
+end
+userinfo.envScriptDir=[userinfo.envRootDir filesep 'Scripts'];
+userinfo.envLibDir=[userinfo.envRootDir filesep 'Library' filesep 'bin'];
+catch %conda not installed 
+    [userinfo.envRootDir,userinfo.envScriptDir,userinfo.envLibDir]=deal([]);
+end
 
 %find if one or more remote drives are mapped
 [~,connlist]=system('net use');
@@ -78,7 +106,7 @@ if logical(regexp(connlist,'OK'))
         servs=regexp(connlist,':','start')-1;
         for servl=1:length(servs)
             if logical(strfind(regexprep(connlist(servs(servl):carrets(find(carrets>servs(servl),1))-1),'[^\w\\|.|:|-'']',''),...
-                    'ccn-sommerserv.win.duke.edu'))
+                    userinfo.servname))
                 userinfo.servrep=regexprep(connlist(servs(servl):carrets(find(carrets>servs(servl),1))-1),'[^\w\\|.|:|-'']','');
                 userinfo.mapdr=userinfo.servrep(1:2);userinfo.servrep=userinfo.servrep(3:end);userinfo.servrep=regexprep(userinfo.servrep,'\\','/');
                 break;
@@ -88,4 +116,5 @@ if logical(regexp(connlist,'OK'))
 else
     [userinfo.servrep,userinfo.mapdr]=deal([]);
 end
+cd(keepCurDir);
 end
