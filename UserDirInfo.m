@@ -1,8 +1,8 @@
 function userinfo=UserDirInfo
 keepCurDir=cd;
 %define info structure
-userinfo=struct('directory',[],'user',[],'dbldir',[],...
-    'syncdir',[],'mapdr',[],'servrep',[],'mapddataf',[]);
+userinfo=struct('directory',cd,'user',getenv('username')); ...% ,'dbldir',[],...
+%     'syncdir',[],'mapdr',[],'servrep',[],'mapddataf',[]);
 % find host name
 [~,compHostName]=system('hostname');
 
@@ -27,7 +27,7 @@ end
 
 %open definition file
 try 
-    cd ('C:\Code') % change that folder to wherever your defition file is
+    cd ('C:\Code') % change that folder to wherever your definition file is
     if exist(compHostName,'file')
         fileLoc=['C:\Code' filesep compHostName];
     end
@@ -65,7 +65,7 @@ catch
     fileLoc=fileLoc{1, 1}{1, 1};
 end
 
-if ~isempty(fileLoc)
+if ~isempty(fileLoc) & ~contains(fileLoc,'File Not Found')
     fid = fopen(fileLoc);
     tline = fgetl(fid);
     while ischar(tline)
@@ -73,12 +73,15 @@ if ~isempty(fileLoc)
         tline = fgetl(fid);
     end
     fclose(fid);
+else
+    userinfo=[];
+    return;
 end
 
 % find environment directories
 try 
 [~,envInfo] = system('conda info -e');
-userinfo.envRootDir=cell2mat(regexp(envInfo,'(?<=spykc                    ).+?(?=\n)','match'));
+userinfo.envRootDir=cell2mat(regexp(envInfo,['(?<=' userinfo.circusEnv '                   ).+?(?=\n)'],'match'));
 if isempty(userinfo.envRootDir)
     userinfo.envRootDir=cell2mat(regexp(envInfo,'(?<=root                  \*  ).+?(?=\n)','match'));
 end
