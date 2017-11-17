@@ -37,5 +37,9 @@ chuncks(isnan(chuncks))=0;
 % much much slower
 % chuncks=cell2mat(cellfun(@(x) data(x+chunkWindow),mat2cell(chunkIndex,ones(size(chunkIndex,1),1)),'UniformOutput',false));
 
+%% center waveforms
+chuncks=chuncks-mean(chuncks,2);
 % figure; plot(mean(chuncks))
+% figure; hold on; plot(chuncks(1:10,:)')
+
 end
