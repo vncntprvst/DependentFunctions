@@ -8,18 +8,18 @@ function spikeRasters=MakeRasters(spikeData,pulses,preAlignWindow,postAlignWindo
 % pulses, structure with fields
 % times 
 % samplingRate
-
+% find(spikeData.selectedUnits==unique(spikeData.unitsIdx(spikeData.unitsIdx(:,2)==2 & spikeData.unitsIdx(:,3)==2,1)))
 %% get spike times and convert to binary array
 for clusNum=1:size(spikeData.selectedUnits,1)
     %% convert to 1 millisecond bins and plot excerpt
     binSize=1;
-    numBin=ceil((max(spikeData.spikeTimes(spikeData.unitsIdx==spikeData.selectedUnits(clusNum)))+1)/...
+    numBin=ceil((max(spikeData.spikeTimes(spikeData.unitsIdx(:,1)==spikeData.selectedUnits(clusNum)))+1)/...
         (spikeData.samplingRate/1000)/binSize);
     
-    [spikeCount,spikeTime]=histcounts(double(spikeData.spikeTimes(spikeData.unitsIdx==spikeData.selectedUnits(clusNum)))/...
+    [spikeCount,spikeTime]=histcounts(double(spikeData.spikeTimes(spikeData.unitsIdx(:,1)==spikeData.selectedUnits(clusNum)))/...
         double(spikeData.samplingRate/1000), numBin);
     
-    %     foo=spikeData.spikeTimes(spikeData.unitsIdx==spikeData.selectedUnits(clusNum))/30;
+    %     foo=spikeData.spikeTimes(spikeData.unitsIdx(:,1)==spikeData.selectedUnits(clusNum))/30;
     %         figure; bar(spikeTime(1:6000),spikeCount(1:6000),'hist')
     
     
