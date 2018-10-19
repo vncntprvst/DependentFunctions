@@ -1,0 +1,44 @@
+function recSettings = readOpenEphysXMLSettings(fname)
+
+readXMLSettings=parseXML(fname);
+readXMLSettings=readXMLSettings.Children(~cellfun(@(fieldNames) ...
+    contains(fieldNames,'#text'), {readXMLSettings.Children.Name})); %remove fluff
+
+for fieldNum=1:numel(readXMLSettings)
+    if ~isempty(readXMLSettings(fieldNum).Attributes)
+        recSettings.(lower(readXMLSettings(fieldNum).Name))=readXMLSettings(fieldNum).Attributes;
+    else
+        keepFields=~cellfun(@(fieldNames) contains(fieldNames,'#text'),...
+            {readXMLSettings(fieldNum).Children.Name});
+        switch readXMLSettings(fieldNum).Name
+            case 'INFO'
+                recSettings.setupInfo=struct;
+                for subFieldNum=find(keepFields)
+                recSettings.setupinfo.(lower(readXMLSettings(fieldNum).Children(subFieldNum).Name))=...
+                    readXMLSettings(fieldNum).Children(subFieldNum).Children.Data;
+                end
+            case 'SIGNALCHAIN'
+                sourceTypeNameIdx=contains(...
+                    {readXMLSettings(fieldNum).Children(2).Attributes.Name},'libraryName');
+                sourceType=readXMLSettings(...
+                    fieldNum).Children(2).Attributes(sourceTypeNameIdx).Value;
+                switch sourceType
+                    case 'Rhythm FPGA'
+                        recSettings.signals=struct;
+                        for subFieldNum=find(keepFields)
+                            if isempty(readXMLSettings(fieldNum).Children(subFieldNum).Children)
+                                pluginTypeNameIdx=contains(...
+                                    {readXMLSettings(fieldNum).Children(subFieldNum).Attributes.Name},'pluginName');
+                                pluginType=readXMLSettings(...
+                    fieldNum).Children(subFieldNum).Attributes(pluginTypeNameIdx).Value;
+
+                                
+                                
+                                recSettings.signals.(readXMLSettings(fieldNum).Children(subFieldNum).Attributes
+                            case 
+                        keepSubFields=~cellfun(@(fieldNames) contains(fieldNames,'#text'),...
+                            {readXMLSettings(fieldNum).Children.Name});
+
+                        
+                        
+        end

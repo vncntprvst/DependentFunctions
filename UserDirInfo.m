@@ -8,7 +8,7 @@ end
 
 keepCurDir=cd;
 %define info structure
-userinfo=struct('directory',cd,'user',getenv('username')); ...% ,'dbldir',[],...
+userinfo=struct('directory',cd,'user',getenv('username')); % ,'dbldir',[],...
     %     'syncdir',[],'mapdr',[],'servrep',[],'mapddataf',[]);
 
 if contains(usageMode,'extended') || contains(usageMode,'simple')
@@ -18,7 +18,9 @@ if contains(usageMode,'extended') || contains(usageMode,'simple')
     if regexp(compHostName(end),'\W') %the system command added a carriage return ending
         compHostName=compHostName(1:end-1);
     end
-    
+    if isempty(userinfo.user)
+        userinfo.user=compHostName;
+    end
     %the definition file provides information about user directories
     %fill up the following fields (all are optional - depends on user preferences)
     % and save file with the hostname as filename (e.g., RecordingSetupPC)
@@ -33,12 +35,12 @@ if contains(usageMode,'extended') || contains(usageMode,'simple')
     % userinfo.dbldir=''; %database directory
     % userinfo.mapddataf=''; %mapped drive
     % userinfo.syncdir=''; %cloud directory
-    
     %open definition file
     try
-        cd ('C:\Code') % change that folder to wherever your definition file is
+        scriptLoc=regexp(mfilename('fullpath'),['^.+(?=\' filesep ')'],'match','once');
+        cd (scriptLoc); cd ../..; scriptRoot=pwd; % or change that folder to wherever your definition file is
         if exist(compHostName,'file')
-            fileLoc=['C:\Code' filesep compHostName];
+            fileLoc=[scriptRoot filesep compHostName];
         end
     catch
         disp('trying to locate directory definition file');
@@ -74,7 +76,7 @@ if contains(usageMode,'extended') || contains(usageMode,'simple')
         fileLoc=fileLoc{1, 1}{1, 1};
     end
     
-    if ~isempty(fileLoc) & ~contains(fileLoc,'File Not Found')
+    if ~isempty(fileLoc) && ~contains(fileLoc,'File Not Found')
         fid = fopen(fileLoc);
         tline = fgetl(fid);
         while ischar(tline)
