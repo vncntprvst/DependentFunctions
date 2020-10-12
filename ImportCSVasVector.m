@@ -1,6 +1,6 @@
 function data=ImportCSVasVector(filename,delimiter,hasHeader)
 % Import data from csv file. 
-% Sssuming floating numbers
+% Assuming floating numbers
 if nargin==1
     delimiter = ' '; %Default delimiter is space 
 end
