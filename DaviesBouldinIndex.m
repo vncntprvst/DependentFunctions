@@ -31,7 +31,7 @@ for numberOfClusters = 2:15
 end
 
 %plot results
-figure; plot(davies_index(2:end),'r','linewidth',2)
+figure; plot(daviesIndex(2:end),'r','linewidth',2)
 
 % find optimal number of clusters
 optimalNumCluster=find(daviesIndex(2:end)==max(daviesIndex(2:end)))+1;
